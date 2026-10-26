@@ -9,11 +9,12 @@ Servidor MariaDB situado en la **Intranet**. Guarda los datos de la aplicación 
 1. [Datos de la máquina](#1-datos-de-la-máquina)
 2. [Configuración de red](#2-configuración-de-red)
 3. [Instalación de MariaDB](#3-instalación-de-mariadb)
-4. [Usuario obligatorio bchecker](#4-usuario-obligatorio-bchecker)
-5. [Permitir conexiones remotas](#5-permitir-conexiones-remotas)
-6. [Seguridad del motor](#6-seguridad-del-motor-mysql_secure_installation)
-7. [Base de datos y usuarios remotos](#7-base-de-datos-y-usuarios-remotos)
-8. [Resumen de comprobaciones](#8-resumen-de-comprobaciones)
+4. [Nombre de la máquina](#4-nombre-de-la-máquina)
+5. [Usuario obligatorio bchecker](#5-usuario-obligatorio-bchecker)
+6. [Permitir conexiones remotas](#6-permitir-conexiones-remotas)
+7. [Seguridad del motor](#7-seguridad-del-motor-mysql_secure_installation)
+8. [Base de datos y usuarios remotos](#8-base-de-datos-y-usuarios-remotos)
+9. [Resumen de comprobaciones](#9-resumen-de-comprobaciones)
 
 ---
 
@@ -21,7 +22,7 @@ Servidor MariaDB situado en la **Intranet**. Guarda los datos de la aplicación 
 
 | Campo | Valor |
 |---|---|
-| Hostname | B-N04 <!-- TODO Mario: en las capturas sale 'ubuntu', cambiar con hostnamectl --> |
+| Hostname | B-N04 |
 | Sistema operativo | Ubuntu 22.04 LTS |
 | Motor de BBDD | MariaDB 10.6.23 |
 | Red | Intranet (10.4.20.0/24) |
@@ -51,16 +52,17 @@ network:
       nameservers:
         addresses:
           - 8.8.8.8
-          - 1.1.1.1
 ```
 
 - `dhcp4: no` → no pide IP al DHCP, usa la fija.
 - `routes: default via 10.4.20.1` → todo lo que no sea de la Intranet sale por el router.
-- `nameservers` → servidores DNS que usa la máquina.
+- `nameservers` → servidor DNS que usa la máquina.
 
 ```bash
 sudo netplan apply
 ```
+
+La máquina solo tiene la tarjeta de la Intranet: sale a Internet a través del router (NAT).
 
 ![Configuración de netplan](img/bbdd-12-netplan.png)
 
@@ -95,7 +97,24 @@ Tiene que aparecer **`enabled`** y **`active (running)`**.
 
 ---
 
-## 4. Usuario obligatorio bchecker
+## 4. Nombre de la máquina
+
+El enunciado exige el nombre `B-NCC`.
+
+```bash
+sudo hostnamectl set-hostname B-N04
+hostname
+```
+
+![Cambio de hostname](img/bbdd-13-hostname.png)
+
+Al abrir una nueva terminal, el prompt ya muestra el nombre nuevo:
+
+![Prompt con el hostname B-N04](img/bbdd-14-hostname-prompt.png)
+
+---
+
+## 5. Usuario obligatorio bchecker
 
 El enunciado pide un usuario `bchecker` (contraseña `bchecker121`) en todos los equipos, para que el profesorado pueda revisarlos.
 
@@ -115,7 +134,7 @@ Durante la creación, el sistema avisa de que la contraseña es débil porque co
 
 ---
 
-## 5. Permitir conexiones remotas
+## 6. Permitir conexiones remotas
 
 Por defecto, MariaDB solo escucha en `127.0.0.1` (la propia máquina). Como la aplicación web está en **otro servidor** (W-N04, en la DMZ), hay que permitir conexiones desde la red.
 
@@ -150,7 +169,7 @@ sudo ss -tlnp | grep 3306
 
 ---
 
-## 6. Seguridad del motor (mysql_secure_installation)
+## 7. Seguridad del motor (mysql_secure_installation)
 
 Script que viene con MariaDB para quitar la configuración "de pruebas" que trae por defecto.
 
@@ -173,51 +192,60 @@ sudo mysql_secure_installation
 
 ---
 
-## 7. Base de datos y usuarios remotos
+## 8. Base de datos y usuarios remotos
 
-Se crea la base de datos **`crud_db`** con codificación **`utf8mb4`**, que admite todos los caracteres (acentos, `ç`, `ñ`…). Es necesaria porque los datos de Open Data BCN tienen nombres en catalán.
-
-<!-- TODO Mario: añadir captura del CREATE DATABASE, CREATE USER y GRANT -->
-
-Se configuran dos usuarios remotos:
-
-| Usuario | Desde dónde | Para qué |
-|---|---|---|
-| `usuario_app` | `%` (cualquier equipo) | Lo usa la aplicación del servidor web |
-| `bchecker` | `%` (cualquier equipo) | Revisión por parte del profesorado |
-
-Comandos para fijar las contraseñas:
+Se entra en MariaDB como administrador:
 
 ```bash
 sudo mysql -u root
 ```
 
+![Acceso a MariaDB](img/bbdd-15-acceso-mysql.png)
+
+Se crea la base de datos **`crud_db`** con codificación **`utf8mb4`**, que admite todos los caracteres (acentos, `ç`, `ñ`…). Es necesaria porque los datos de Open Data BCN tienen nombres en catalán. Después se crean los usuarios remotos y se les dan permisos:
+
 ```sql
-ALTER USER 'usuario_app'@'%' IDENTIFIED BY '********';
-ALTER USER 'bchecker'@'%' IDENTIFIED BY 'bchecker121';
+CREATE DATABASE crud_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE USER 'usuario_app'@'%' IDENTIFIED BY '********';
+GRANT ALL PRIVILEGES ON crud_db.* TO 'usuario_app'@'%';
+
+CREATE USER 'bchecker'@'%' IDENTIFIED BY 'bchecker121';
+GRANT ALL PRIVILEGES ON *.* TO 'bchecker'@'%' WITH GRANT OPTION;
+
 FLUSH PRIVILEGES;
 EXIT;
 ```
 
+| Usuario | Desde dónde | Permisos | Para qué |
+|---|---|---|---|
+| `usuario_app` | `%` (cualquier equipo) | Solo sobre `crud_db` | Lo usa la aplicación del servidor web |
+| `bchecker` | `%` (cualquier equipo) | Todas las bases de datos | Revisión por parte del profesorado |
+
 - `'usuario'@'%'` → el `%` indica que el usuario puede conectarse desde cualquier IP.
-- `FLUSH PRIVILEGES` → recarga los permisos para que los cambios se apliquen.
-- Las contraseñas se escriben sin espacios para evitar errores al conectar desde PHP.
+- `crud_db.*` → todas las tablas de esa base de datos, y ninguna más.
+- `FLUSH PRIVILEGES` → recarga los permisos para que se apliquen.
 
-> La contraseña de `usuario_app` no se publica porque el repositorio es público. Se ha difuminado en las capturas.
+> La contraseña de `usuario_app` no se publica porque el repositorio es público. Se ha difuminado en la captura.
 
-![Configuración de usuarios remotos](img/bbdd-10-usuarios-remotos.png)
+![Creación de la base de datos y los usuarios](img/bbdd-17-crear-bbdd-usuarios.png)
 
-Comprobación final: el servicio sigue escuchando en el puerto 3306 y los usuarios se actualizan sin errores.
+Comprobación final de que MariaDB sigue escuchando en el puerto 3306:
 
-![Verificación de usuarios y puerto](img/bbdd-11-usuarios-verificacion.png)
+```bash
+sudo ss -tlnp | grep mariadb
+```
+
+![Comprobación del puerto 3306](img/bbdd-16-comprobacion-puerto.png)
 
 ---
 
-## 8. Resumen de comprobaciones
+## 9. Resumen de comprobaciones
 
 | Comprobación | Comando | Resultado esperado |
 |---|---|---|
 | Servicio activo | `systemctl status mariadb` | `active (running)` |
 | Escucha en red | `ss -tlnp \| grep 3306` | `0.0.0.0:3306` |
 | Seguridad aplicada | `mysql_secure_installation` | `All done!` |
-| Usuarios configurados | `ALTER USER …` | `Query OK` |
+| Hostname | `hostname` | `B-N04` |
+| BBDD y usuarios | `CREATE DATABASE` / `CREATE USER` | `Query OK` |
