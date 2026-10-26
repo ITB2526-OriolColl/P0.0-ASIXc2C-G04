@@ -113,10 +113,8 @@ Configuració del reenviament de paquets, NAT per sortir a Internet i regles de 
    # Restringir DMZ cap a Intranet: Només accés des del Web (10.4.10.10) a la BBDD (10.4.20.10) port 3306 (MySQL)
    sudo iptables -A FORWARD -i enp4s0 -s 10.4.10.10 -d 10.4.20.10 -p tcp --dport 3306 -j ACCEPT
 
-   <img width="729" height="201" alt="image" src="https://github.com/user-attachments/assets/fa8a5fa3-8f29-46ba-8ec7-d3c926e90c68" />
+    
+   ```
+ <img width="729" height="201" alt="image" src="https://github.com/user-attachments/assets/fa8a5fa3-8f29-46ba-8ec7-d3c926e90c68" />
 
    <img width="732" height="131" alt="image" src="https://github.com/user-attachments/assets/e284db24-c96d-49e8-b7d2-db6ac031e096" />
-
-
-   
-   ```
