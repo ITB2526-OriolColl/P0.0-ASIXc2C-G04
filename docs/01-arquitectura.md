@@ -120,15 +120,4 @@ Cuando el router funciona, se quita la tarjeta Default de los servidores y se po
 
 ---
 
-## 8. Nomenclatura
 
-| Elemento | Formato | Ejemplo |
-|---|---|---|
-| Router | `R-NCC` | `R-N04` (también resoluble como `R`) |
-| Servidor web | `W-NCC` | `W-N04` |
-| Servidor de BBDD | `B-NCC` | `B-N04` |
-| Servidor FTP | `F-NCC` | `F-N04` |
-| Usuario obligatorio | `bchecker` / `bchecker121` | En todos los equipos |
-| Proyecto y repositorio | `P0.0-ASIXc2gC-Gnn` | `P0.0-ASIXc2C-G04` |
-
-`NCC` es el número de equipo (`N04`) y `Gnn` el número de grupo (`G04`).
