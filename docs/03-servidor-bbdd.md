@@ -15,7 +15,8 @@ Servidor MariaDB situado en la **Intranet**. Guarda los datos de la aplicación 
 7. [Seguridad del motor](#7-seguridad-del-motor-mysql_secure_installation)
 8. [Base de datos y usuarios remotos](#8-base-de-datos-y-usuarios-remotos)
 9. [Resumen de comprobaciones](#9-resumen-de-comprobaciones)
-
+10. [Importación del CSV de OpenData](#10-importación-del-csv-de-opendata)
+11. [Acceso a GitHub por clave SSH y subida de cambios](#11-acceso-a-github-por-clave-ssh-y-subida-de-cambios)
 ---
 
 ## 1. Datos de la máquina
@@ -249,3 +250,85 @@ sudo ss -tlnp | grep mariadb
 | Seguridad aplicada | `mysql_secure_installation` | `All done!` |
 | Hostname | `hostname` | `B-N04` |
 | BBDD y usuarios | `CREATE DATABASE` / `CREATE USER` | `Query OK` |
+| Datos importados | `SELECT COUNT(*) FROM equipaments_educacio;` | `2709` |
+
+---
+
+## 10. Importación del CSV de OpenData
+
+Se carga el *Llistat d'equipaments d'educació* de OpenData Barcelona en `crud_db`.
+
+```bash
+curl -L -o equipaments.csv "https://opendata-ajuntament.barcelona.cat/data/dataset/f36b60f2-9541-4d08-b0f9-b0a9313fab3d/resource/29d9ff10-6892-4f16-9012-d5c4997857e7/download"
+file -i equipaments.csv
+wc -l equipaments.csv
+```
+
+El archivo viene en **UTF-16** (`charset=utf-16le`), y MariaDB mostraría los acentos rotos. Se convierte a UTF-8 y se eliminan los retornos de carro (`\r`):
+
+```bash
+iconv -f UTF-16 -t UTF-8 equipaments.csv | sed 's/\r$//' > equipaments_utf8.csv
+file -i equipaments_utf8.csv
+```
+
+Se activa la carga local de archivos al entrar en MariaDB, y se crea la tabla con una columna por campo del CSV (tipo `TEXT`) más un `id` autoincremental como clave primaria, porque `register_id` se repite en varias filas:
+
+```bash
+sudo mysql --local-infile=1 -u root
+```
+
+```sql
+USE crud_db;
+SHOW VARIABLES LIKE 'local_infile';
+```
+
+La tabla `equipaments_educacio` y la carga con `LOAD DATA LOCAL INFILE` están en el script `sql/02-importar-csv.sql`.
+
+| Comprobación | Resultado |
+|---|---|
+| Filas importadas | **2709** (2710 líneas del CSV menos la cabecera) |
+| Filas omitidas / avisos | 0 / 0 |
+| Acentos | Correctos (`Formació`, `Sants-Montjuïc`) |
+
+Copia de seguridad de la base de datos (con `sudo`, porque `root` de MariaDB se autentica con el usuario del sistema):
+
+```bash
+sudo mysqldump --default-character-set=utf8mb4 crud_db > sql/crud_db_equipaments.sql
+```
+
+Para restaurarla: `sudo mysql crud_db < sql/crud_db_equipaments.sql`.
+
+---
+
+## 11. Acceso a GitHub por clave SSH y subida de cambios
+
+El servidor se autentica en GitHub por **clave pública/privada**, sin contraseña.
+
+```bash
+ssh-keygen -t ed25519 -C "bchecker@B-N04"
+cat ~/.ssh/id_ed25519.pub
+```
+
+La clave pública se registra en GitHub (*Settings > SSH and GPG keys > New SSH key*) y se comprueba la conexión:
+
+```bash
+ssh -T git@github.com
+```
+
+Respuesta esperada: `Hi USUARIO! You've successfully authenticated, but GitHub does not provide shell access.`
+
+Con la clave registrada, se clona el repositorio y se suben los cambios:
+
+```bash
+git clone git@github.com:ITB2526-OriolColl/P0.0-ASIXc2C-G04.git
+git pull origin main
+git add sql/ docs/
+git commit -m "Dump de crud_db y script de importación del CSV"
+git push origin main
+```
+
+> El usuario que sube los cambios debe ser colaborador del repositorio con permiso de escritura.
+
+### Cambio de contraseña de `usuario_app`
+
+La contraseña se cambió con `ALTER USER` y se aplicó con `FLUSH PRIVILEGES`. Se verificó la conexión desde W-N04. La contraseña no se documenta porque el repositorio es público.
