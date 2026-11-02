@@ -173,11 +173,10 @@ curl -s http://localhost/info.php | grep -i -o "mysqli" | head -1
 
 **Eliminar info.php**
 
-![info.php eliminado](img/web-11-borrar-info-php.png)
-
 ```bash
 sudo rm /var/www/html/info.php
 ```
+![info.php eliminado](img/web-11-borrar-info-php.png)
 
 `info.php` muestra información interna del servidor (versiones, rutas, módulos) que un atacante podría usar. Solo se usa para la prueba y después se borra.
 
