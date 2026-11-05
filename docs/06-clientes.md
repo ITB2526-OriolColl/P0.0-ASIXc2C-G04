@@ -89,4 +89,16 @@ Desde Firefox, `http://W-N04/app/app/` muestra la aplicación con los datos de l
 
 **Responsable:** Jordi
 
-<!-- TODO Jordi: configuración del cliente Windows -->
+
+### 1.1 Máquina
+
+| Campo | Valor |
+|---|---|
+| Hostname | `PC-W11-N04` |
+| Sistema operativo | Windows 11 |
+| Red | Intranet (solo esta tarjeta, sin Default) |
+| IP | Por DHCP (`10.4.20.93` en las pruebas) |
+
+Sin tarjeta Default: el PC sale a Internet a través del router, como un equipo de la empresa.
+
+---
