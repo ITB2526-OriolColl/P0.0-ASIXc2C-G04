@@ -332,3 +332,14 @@ git push origin main
 ### Cambio de contraseña de `usuario_app`
 
 La contraseña se cambió con `ALTER USER` y se aplicó con `FLUSH PRIVILEGES`. Se verificó la conexión desde W-N04. La contraseña no se documenta porque el repositorio es público.
+
+---
+
+## 10. Sprint 2: Carga de Datos (OpenData BCN) y Ajustes de Seguridad
+
+### 10.1 Importación del dataset de equipamientos educativos
+Se descarga el listado oficial en formato CSV desde OpenData Barcelona y se convierte la codificación original `UTF-16LE` a `UTF-8` para asegurar el soporte correcto de acentos y caracteres especiales en la base de datos.
+
+```bash
+curl -Lo equipaments.csv "[https://opendata-ajuntament.barcelona.cat/data/dataset/f36b60f2-9541-4d08-b0f9-b0a9313fab3d/resource/29d9ff10-6892-4f16-9012-d5c4997857e7/download](https://opendata-ajuntament.barcelona.cat/data/dataset/f36b60f2-9541-4d08-b0f9-b0a9313fab3d/resource/29d9ff10-6892-4f16-9012-d5c4997857e7/download)"
+iconv -f UTF-16 UTF-8 equipaments.csv | sed 's/\r$//' > equipaments_utf8.csv
