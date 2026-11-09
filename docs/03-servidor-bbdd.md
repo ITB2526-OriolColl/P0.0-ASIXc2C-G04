@@ -17,6 +17,8 @@ Servidor MariaDB situado en la **Intranet**. Guarda los datos de la aplicación 
 9. [Resumen de comprobaciones](#9-resumen-de-comprobaciones)
 10. [Importación del CSV de OpenData](#10-importación-del-csv-de-opendata)
 11. [Acceso a GitHub por clave SSH y subida de cambios](#11-acceso-a-github-por-clave-ssh-y-subida-de-cambios)
+12. [Salida por el router y usuario restringido](#12-salida-por-el-router-y-usuario-restringido)
+
 ---
 
 ## 1. Datos de la máquina
@@ -264,12 +266,24 @@ file -i equipaments.csv
 wc -l equipaments.csv
 ```
 
+![Descarga del CSV](img/bbdd-18-descarga-csv.png)
+
+![Codificación original UTF-16](img/bbdd-19-csv-utf16.png)
+
+![2710 líneas en el CSV](img/bbdd-20-csv-lineas.png)
+
+Con la codificación original, los acentos salen rotos (`Formaci�`, `Montju�c`):
+
+![CSV original con los acentos rotos](img/bbdd-21-csv-original.png)
+
 El archivo viene en **UTF-16** (`charset=utf-16le`), y MariaDB mostraría los acentos rotos. Se convierte a UTF-8 y se eliminan los retornos de carro (`\r`):
 
 ```bash
 iconv -f UTF-16 -t UTF-8 equipaments.csv | sed 's/\r$//' > equipaments_utf8.csv
 file -i equipaments_utf8.csv
 ```
+
+![Conversión a UTF-8](img/bbdd-22-conversion-utf8.png)
 
 Se activa la carga local de archivos al entrar en MariaDB, y se crea la tabla con una columna por campo del CSV (tipo `TEXT`) más un `id` autoincremental como clave primaria, porque `register_id` se repite en varias filas:
 
@@ -282,13 +296,23 @@ USE crud_db;
 SHOW VARIABLES LIKE 'local_infile';
 ```
 
+![local_infile activado](img/bbdd-23-local-infile.png)
+
 La tabla `equipaments_educacio` y la carga con `LOAD DATA LOCAL INFILE` están en el script `sql/02-importar-csv.sql`.
+
+![Creación de la tabla](img/bbdd-24-crear-tabla.png)
+
+![Carga de los datos y recuento](img/bbdd-25-carga-datos.png)
+
+![Script de importación](img/bbdd-28-script-importar.png)
 
 | Comprobación | Resultado |
 |---|---|
 | Filas importadas | **2709** (2710 líneas del CSV menos la cabecera) |
 | Filas omitidas / avisos | 0 / 0 |
 | Acentos | Correctos (`Formació`, `Sants-Montjuïc`) |
+
+![Datos importados con los acentos correctos](img/bbdd-26-datos-acentos.png)
 
 Copia de seguridad de la base de datos (con `sudo`, porque `root` de MariaDB se autentica con el usuario del sistema):
 
@@ -297,6 +321,8 @@ sudo mysqldump --default-character-set=utf8mb4 crud_db > sql/crud_db_equipaments
 ```
 
 Para restaurarla: `sudo mysql crud_db < sql/crud_db_equipaments.sql`.
+
+![Copia de seguridad con mysqldump](img/bbdd-27-copia-seguridad.png)
 
 ---
 
@@ -309,6 +335,8 @@ ssh-keygen -t ed25519 -C "bchecker@B-N04"
 cat ~/.ssh/id_ed25519.pub
 ```
 
+![Generación de la clave SSH](img/bbdd-29-ssh-keygen.png)
+
 La clave pública se registra en GitHub (*Settings > SSH and GPG keys > New SSH key*) y se comprueba la conexión:
 
 ```bash
@@ -316,6 +344,14 @@ ssh -T git@github.com
 ```
 
 Respuesta esperada: `Hi USUARIO! You've successfully authenticated, but GitHub does not provide shell access.`
+
+Antes de registrar la clave en GitHub, la conexión se rechaza (`Permission denied (publickey)`):
+
+![Conexión rechazada sin la clave registrada](img/bbdd-30-ssh-denegado.png)
+
+![Clave registrada en GitHub](img/bbdd-31-github-ssh-key.png)
+
+![Autenticación correcta](img/bbdd-32-ssh-autenticado.png)
 
 Con la clave registrada, se clona el repositorio y se suben los cambios:
 
@@ -327,6 +363,10 @@ git commit -m "Dump de crud_db y script de importación del CSV"
 git push origin main
 ```
 
+![Clonado del repositorio](img/bbdd-33-git-clone.png)
+
+![Subida del script y la copia de seguridad](img/bbdd-34-git-push.png)
+
 > El usuario que sube los cambios debe ser colaborador del repositorio con permiso de escritura.
 
 ### Cambio de contraseña de `usuario_app`
@@ -335,11 +375,40 @@ La contraseña se cambió con `ALTER USER` y se aplicó con `FLUSH PRIVILEGES`. 
 
 ---
 
-## 10. Sprint 2: Carga de Datos (OpenData BCN) y Ajustes de Seguridad
+## 12. Salida por el router y usuario restringido
 
-### 10.1 Importación del dataset de equipamientos educativos
-Se descarga el listado oficial en formato CSV desde OpenData Barcelona y se convierte la codificación original `UTF-16LE` a `UTF-8` para asegurar el soporte correcto de acentos y caracteres especiales en la base de datos.
+### 12.1 Internet a través del router
+
+Se quita la tarjeta Default de IsardVDI. B-N04 queda solo en la Intranet y sale a Internet a través del router (NAT):
 
 ```bash
-curl -Lo equipaments.csv "[https://opendata-ajuntament.barcelona.cat/data/dataset/f36b60f2-9541-4d08-b0f9-b0a9313fab3d/resource/29d9ff10-6892-4f16-9012-d5c4997857e7/download](https://opendata-ajuntament.barcelona.cat/data/dataset/f36b60f2-9541-4d08-b0f9-b0a9313fab3d/resource/29d9ff10-6892-4f16-9012-d5c4997857e7/download)"
-iconv -f UTF-16 UTF-8 equipaments.csv | sed 's/\r$//' > equipaments_utf8.csv
+ping -c 2 8.8.8.8
+ping -c 2 github.com
+```
+
+Las dos responden: hay salida a Internet y el DNS resuelve nombres.
+
+![Salida a Internet a través del router](img/bbdd-35-internet-router.png)
+
+> Con la tarjeta Default, las respuestas a W-N04 salían por IsardVDI en lugar de por el router y se perdían. Sin ella, todo el tráfico pasa por R-N04.
+
+### 12.2 `usuario_app` solo desde el servidor web
+
+`usuario_app` podía conectarse desde cualquier IP (`'%'`). Se restringe a la IP de W-N04 (`10.4.10.10`):
+
+```sql
+USE crud_db;
+DROP USER IF EXISTS 'usuario_app'@'%';
+CREATE USER 'usuario_app'@'10.4.10.10' IDENTIFIED BY '********';
+GRANT ALL PRIVILEGES ON crud_db.* TO 'usuario_app'@'10.4.10.10';
+FLUSH PRIVILEGES;
+```
+
+![usuario_app restringido a W-N04](img/bbdd-36-usuario-app-restringido.png)
+
+Es una **segunda capa de seguridad**: aunque el firewall del router fallara, MariaDB solo aceptaría a `usuario_app` desde el servidor web.
+
+| Usuario | Desde dónde | Permisos |
+|---|---|---|
+| `usuario_app` | `10.4.10.10` (W-N04) | Solo sobre `crud_db` |
+| `bchecker` | `%` (cualquier equipo) | Todas las bases de datos |
