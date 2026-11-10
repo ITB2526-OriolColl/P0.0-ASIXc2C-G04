@@ -225,6 +225,8 @@ EXIT;
 | `usuario_app` | `%` (cualquier equipo) | Solo sobre `crud_db` | Lo usa la aplicación del servidor web |
 | `bchecker` | `%` (cualquier equipo) | Todas las bases de datos | Revisión por parte del profesorado |
 
+> **Nota:** `usuario_app` se creó inicialmente con `%` y después se restringió a la IP de W-N04 (ver apartado 12.2).
+
 - `'usuario'@'%'` → el `%` indica que el usuario puede conectarse desde cualquier IP.
 - `crud_db.*` → todas las tablas de esa base de datos, y ninguna más.
 - `FLUSH PRIVILEGES` → recarga los permisos para que se apliquen.
