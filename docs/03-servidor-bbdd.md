@@ -18,6 +18,7 @@ Servidor MariaDB situado en la **Intranet**. Guarda los datos de la aplicación 
 10. [Importación del CSV de OpenData](#10-importación-del-csv-de-opendata)
 11. [Acceso a GitHub por clave SSH y subida de cambios](#11-acceso-a-github-por-clave-ssh-y-subida-de-cambios)
 12. [Salida por el router y usuario restringido](#12-salida-por-el-router-y-usuario-restringido)
+13. [Servicio SSH](#13-servicio-ssh)
 
 ---
 
@@ -255,6 +256,7 @@ sudo ss -tlnp | grep mariadb
 | Hostname | `hostname` | `B-N04` |
 | BBDD y usuarios | `CREATE DATABASE` / `CREATE USER` | `Query OK` |
 | Datos importados | `SELECT COUNT(*) FROM equipaments_educacio;` | `2709` |
+| Servicio SSH | `systemctl status ssh` | `active (running)` |
 
 ---
 
@@ -414,3 +416,41 @@ Es una **segunda capa de seguridad**: aunque el firewall del router fallara, Mar
 |---|---|---|
 | `usuario_app` | `10.4.10.10` (W-N04) | Solo sobre `crud_db` |
 | `bchecker` | `%` (cualquier equipo) | Todas las bases de datos |
+
+---
+
+## 13. Servicio SSH
+
+Se instala el servidor SSH para permitir el acceso remoto con la cuenta `bchecker`, como exige el enunciado:
+
+```bash
+sudo apt install openssh-server -y
+sudo systemctl enable --now ssh
+sudo systemctl status ssh
+```
+
+![Servicio SSH activo](img/bbdd-37-ssh-activo.png)
+
+El servicio queda **activo y habilitado** (arranca solo al encender la máquina) y escucha en el puerto 22:
+
+```bash
+sudo ss -tlnp | grep :22
+```
+
+![SSH escuchando en el puerto 22](img/bbdd-38-ssh-puerto22.png)
+
+El firewall `ufw` está inactivo; aun así se deja permitida la regla del puerto 22 por si se activa más adelante (`sudo ufw allow 22/tcp`).
+
+### 13.1 Acceso con contraseña para bchecker
+
+Se comprueba que la autenticación por contraseña está activada, porque `bchecker` debe poder entrar con su contraseña:
+
+```bash
+sudo sshd -T | grep -i passwordauthentication
+ssh bchecker@10.4.20.10
+```
+
+La primera conexión pide confirmar la huella del servidor (`yes`). El resultado es `passwordauthentication yes` y el acceso correcto:
+
+![Acceso por SSH con bchecker](img/bbdd-39-ssh-bchecker.png)
+
