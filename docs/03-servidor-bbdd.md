@@ -29,7 +29,7 @@ Servidor MariaDB situado en la **Intranet**. Guarda los datos de la aplicación 
 | Sistema operativo | Ubuntu 22.04 LTS |
 | Motor de BBDD | MariaDB 10.6.23 |
 | Red | Intranet (10.4.20.0/24) |
-| Interfaz | `enp3s0` |
+| Interfaz | `enp1s0` |
 | IP | `10.4.20.10/24` (fija) |
 | Puerta de enlace | `10.4.20.1` (router R-N04) |
 | Puerto del servicio | 3306/TCP |
@@ -45,7 +45,7 @@ network:
   version: 2
   renderer: networkd
   ethernets:
-    enp3s0:
+    enp1s0:
       dhcp4: no
       addresses:
         - 10.4.20.10/24
