@@ -169,7 +169,7 @@ sudo ss -tlnp | grep 3306
 
 ![MariaDB escuchando en 0.0.0.0:3306](img/bbdd-07-puerto-3306.png)
 
-> **Seguridad:** abrir el puerto en todas las interfaces no significa que cualquiera pueda entrar. El router solo deja pasar el puerto 3306 desde el servidor web (W-N04), y además MariaDB pide usuario y contraseña.
+> **Seguridad:** abrir el puerto en todas las interfaces no significa que cualquiera pueda entrar. El router solo deja pasar el puerto 3306 desde la DMZ (W-N04), y además MariaDB pide usuario y contraseña.
 
 ---
 
@@ -454,3 +454,19 @@ La primera conexión pide confirmar la huella del servidor (`yes`). El resultado
 
 ![Acceso por SSH con bchecker](img/bbdd-39-ssh-bchecker.png)
 
+
+### 13.2 Acceso SSH entre zonas
+
+El acceso por SSH entre redes depende del firewall del router R-N04, que es intencionado:
+
+- **Intranet → DMZ:** B-N04 puede entrar por SSH en W-N04 con la cuenta `bchecker`.
+
+![SSH de B-N04 a W-N04](img/bbdd-40-ssh-b-a-w.png)
+
+- **DMZ → Intranet:** W-N04 no puede iniciar una conexión SSH hacia B-N04 (`Connection timed out`). Desde la DMZ solo se permite el puerto 3306 de la base de datos.
+
+![SSH de W-N04 a B-N04 bloqueado](img/bbdd-41-ssh-w-a-b-timeout.png)
+
+- **Prueba desde la Intranet:** el router R-N04 (`10.4.20.1`) accede por SSH a B-N04 con la cuenta `bchecker`. B-N04 lo registra como conexión aceptada desde otra máquina:
+
+![Registro de B-N04 con el acceso desde el router](img/bbdd-42-ssh-desde-router.png)
