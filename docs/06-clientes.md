@@ -89,8 +89,7 @@ Desde Firefox, `http://W-N04/app/app/` muestra la aplicación con los datos de l
 
 **Responsable:** Jordi
 
-
-### 1.1 Máquina
+### 2.1 Máquina
 
 | Campo | Valor |
 |---|---|
@@ -100,5 +99,47 @@ Desde Firefox, `http://W-N04/app/app/` muestra la aplicación con los datos de l
 | IP | Por DHCP (`10.4.20.93` en las pruebas) |
 
 Sin tarjeta Default: el PC sale a Internet a través del router, como un equipo de la empresa.
+
+![Hostname del PC Windows](img/clientes-win-01-hostname.png)
+
+### 2.2 Usuario bchecker
+
+El equipo tiene el usuario `bchecker` dado de alta como administrador local, igual que el resto de máquinas del proyecto.
+
+```powershell
+net user bchecker | findstr /B /C:"Nombre de usuario" /C:"Cuenta activa" /C:"Miembros del grupo local"
+```
+
+![Usuario bchecker](img/clientes-win-03-bchecker.png)
+
+### 2.3 Red por DHCP
+
+```powershell
+ipconfig
+```
+
+| Dato | Valor recibido por DHCP |
+|---|---|
+| IP | `10.4.20.93/24` |
+| Puerta de enlace | `10.4.20.1` (R-N04) |
+| Sufijo DNS | `g04.local` |
+
+![IP, puerta de enlace y sufijo DNS recibidos por DHCP](img/clientes-win-02-red-dhcp.png)
+
+### 2.4 DNS
+
+```powershell
+Resolve-DnsName R-N04
+```
+
+`Resolve-DnsName` resuelve `R-N04` a `10.4.20.1` con el DNS del router.
+
+![Resolución de nombres con el DNS del router](img/clientes-win-04-dns.png)
+
+### 2.5 Acceso a la aplicación
+
+Desde el navegador, `http://web.g04.local/app/app/` muestra la aplicación con los datos de la base de datos. Prueba todo el camino: DNS → router → servidor web (DMZ) → router → base de datos (Intranet). Ver [04-servidor-web.md](04-servidor-web.md#8-aplicación-web).
+
+![Aplicación web desde el PC Windows](img/clientes-win-05-app.png)
 
 ---
