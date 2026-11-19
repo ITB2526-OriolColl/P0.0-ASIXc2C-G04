@@ -103,7 +103,7 @@ Tiene que aparecer **`enabled`** y **`active (running)`**.
 
 ## 4. Nombre de la máquina
 
-El enunciado exige el nombre `B-NCC`.
+El enunciado exige el nombre `B-NCC` (con NCC = N04).
 
 ```bash
 sudo hostnamectl set-hostname B-N04
@@ -228,6 +228,8 @@ EXIT;
 
 > **Nota:** `usuario_app` se creó inicialmente con `%` y después se restringió a la IP de W-N04 (ver apartado 12.2).
 
+> `bchecker` existe también en MariaDB porque el enunciado exige esa cuenta en todos los sistemas y aplicaciones.
+
 - `'usuario'@'%'` → el `%` indica que el usuario puede conectarse desde cualquier IP.
 - `crud_db.*` → todas las tablas de esa base de datos, y ninguna más.
 - `FLUSH PRIVILEGES` → recarga los permisos para que se apliquen.
@@ -257,6 +259,9 @@ sudo ss -tlnp | grep mariadb
 | BBDD y usuarios | `CREATE DATABASE` / `CREATE USER` | `Query OK` |
 | Datos importados | `SELECT COUNT(*) FROM equipaments_educacio;` | `2709` |
 | Servicio SSH | `systemctl status ssh` | `active (running)` |
+| Usuarios remotos | `SELECT user, host FROM mysql.user;` | `usuario_app` solo en `10.4.10.10` |
+| Acceso SSH | `ssh bchecker@10.4.20.10` | Entra con contraseña |
+| Conexión desde el servidor web | `mysql -h 10.4.20.10 -u usuario_app -p crud_db` (desde W-N04) | Conecta y ve `crud_db` |
 
 ---
 
@@ -316,6 +321,8 @@ La tabla `equipaments_educacio` y la carga con `LOAD DATA LOCAL INFILE` están e
 | Filas omitidas / avisos | 0 / 0 |
 | Acentos | Correctos (`Formació`, `Sants-Montjuïc`) |
 
+La tabla `equipaments_educacio` tiene 40 columnas (nombre del centro, dirección, distrito, barrio, coordenadas…) y 2709 filas. El script `sql/02-importar-csv.sql` lee el CSV desde `/home/isard/Escritorio/equipaments_utf8.csv`; si se ejecuta desde otra carpeta hay que cambiar esa ruta. La tabla usa la colación `utf8mb4_general_ci`, que no afecta a este uso.
+
 ![Datos importados con los acentos correctos](img/bbdd-26-datos-acentos.png)
 
 Copia de seguridad de la base de datos (con `sudo`, porque `root` de MariaDB se autentica con el usuario del sistema):
@@ -372,6 +379,8 @@ git push origin main
 ![Subida del script y la copia de seguridad](img/bbdd-34-git-push.png)
 
 > El usuario que sube los cambios debe ser colaborador del repositorio con permiso de escritura.
+
+Si el `push` es rechazado porque el remoto va por delante, se ejecuta `git pull --no-rebase origin main`, se guarda el mensaje de fusión y se repite el `push`.
 
 ### Cambio de contraseña de `usuario_app`
 
