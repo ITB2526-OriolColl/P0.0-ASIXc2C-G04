@@ -382,7 +382,7 @@ git push origin main
 
 Si el `push` es rechazado porque el remoto va por delante, se ejecuta `git pull --no-rebase origin main`, se guarda el mensaje de fusión y se repite el `push`.
 
-### Cambio de contraseña de `usuario_app`
+### 11.1 Cambio de contraseña de `usuario_app`
 
 La contraseña se cambió con `ALTER USER` y se aplicó con `FLUSH PRIVILEGES`. Se verificó la conexión desde W-N04. La contraseña no se documenta porque el repositorio es público.
 
