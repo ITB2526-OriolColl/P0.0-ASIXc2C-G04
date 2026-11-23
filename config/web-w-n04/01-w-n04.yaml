@@ -1,0 +1,13 @@
+# /etc/netplan/01-w-n04.yaml  (W-N04)
+# enp1s0: Default de IsardVDI (Internet) · enp2s0: DMZ
+network:
+  version: 2
+  ethernets:
+    enp1s0:
+      dhcp4: true
+    enp2s0:
+      addresses:
+        - 10.4.10.10/24
+      routes:
+        - to: 10.4.20.0/24
+          via: 10.4.10.1

@@ -1,0 +1,4 @@
+# /etc/mysql/mariadb.conf.d/50-server.cnf  (B-N04)
+# Línea modificada respecto al archivo original (antes: 127.0.0.1)
+[mysqld]
+bind-address = 0.0.0.0

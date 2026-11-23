@@ -1,0 +1,12 @@
+# /etc/netplan/01-f-n04.yaml  (F-N04) — configuración final, solo DMZ
+network:
+  version: 2
+  ethernets:
+    enp1s0:
+      addresses:
+        - 10.4.10.20/24
+      routes:
+        - to: default
+          via: 10.4.10.1
+      nameservers:
+        addresses: [10.4.10.1]

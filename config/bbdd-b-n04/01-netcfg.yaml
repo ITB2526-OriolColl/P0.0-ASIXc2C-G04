@@ -1,0 +1,15 @@
+# /etc/netplan/01-netcfg.yaml  (B-N04) — solo Intranet
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    enp1s0:
+      dhcp4: no
+      addresses:
+        - 10.4.20.10/24
+      routes:
+        - to: default
+          via: 10.4.20.1
+      nameservers:
+        addresses:
+          - 8.8.8.8

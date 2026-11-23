@@ -35,16 +35,34 @@ Un símil: el router es el **portero** del edificio, la DMZ es la **recepción**
 
 ## 3. Máquinas y direccionamiento
 
-| Máquina | Tarjetas | Red | IP | Puerta de enlace | Servicios (puerto) | Responsable |
-|---|---|---|---|---|---|---|
-| **R-N04** | 3 | Default | Por DHCP de IsardVDI | La de IsardVDI | NAT | Jordi |
-| | | DMZ | `10.4.10.1/24` | — | DNS (53), DHCP (67) | |
-| | | Intranet | `10.4.20.1/24` | — | DNS (53), DHCP (67) | |
-| **W-N04** | 1 | DMZ | `10.4.10.10/24` (fija) | `10.4.10.1` | HTTP (80), SSH (22) | Oriol |
-| **F-N04** | 1 | DMZ | `10.4.10.20/24` (fija) | `10.4.10.1` | FTP (21), SSH (22) | Mario |
-| **B-N04** | 1 | Intranet | `10.4.20.10/24` (fija) | `10.4.20.1` | MariaDB (3306), SSH (22) | Mario |
-| **PC Linux** | 1 | Intranet | Por DHCP (`10.4.20.100`–`150`) | La da el DHCP | — | Jordi |
-| **PC Windows** | 1 | Intranet | Por DHCP (`10.4.20.100`–`150`) | La da el DHCP | — | Jordi |
+### Router R-N04
+
+| Interfaz | Red | IP | Uso |
+|---|---|---|---|
+| `enp1s0` | WAN (Default de IsardVDI) | DHCP de IsardVDI | Salida a Internet (NAT) |
+| `enp3s0` | Intranet | `10.4.20.1/24` | Puerta de enlace de la Intranet · DHCP y DNS |
+| `enp4s0` | DMZ | `10.4.10.1/24` | Puerta de enlace de la DMZ |
+
+> El router tiene además la interfaz `enp2s0`, conectada a la VPN WireGuard de IsardVDI. Solo sirve para administrarlo a distancia y no forma parte de la red de la empresa.
+
+**DHCP y DNS (dnsmasq)**, en `/etc/dnsmasq.d/intranet.conf`:
+
+| Opción | Valor |
+|---|---|
+| Interfaz | `enp3s0` (solo la Intranet) |
+| Rango DHCP | `10.4.20.50` – `10.4.20.150` (concesión de 12 h) |
+| Puerta de enlace y DNS que reciben los clientes | `10.4.20.1` |
+| Dominio | `g04.local` |
+
+### Servidores y clientes
+
+| Máquina | Zona | IP | Puerta de enlace | Servicios (puerto) | Responsable |
+|---|---|---|---|---|---|
+| **W-N04** | DMZ | `10.4.10.10/24` (fija) | `10.4.10.1` | HTTP (80), SSH (22) | Oriol |
+| **F-N04** | DMZ | `10.4.10.20/24` (fija) | `10.4.10.1` | FTP (21, pasivo 40000-40100), SSH (22) | Oriol |
+| **B-N04** | Intranet | `10.4.20.10/24` (fija) | `10.4.20.1` | MariaDB (3306), SSH (22) | Mario |
+| **PC Linux** | Intranet | Por DHCP | La da el DHCP | — | Oriol |
+| **PC Windows** | Intranet | Por DHCP | La da el DHCP | — | Jordi |
 
 - **Solo el router tiene salida directa a Internet.** El resto de máquinas tienen una única tarjeta en su zona y salen a través del router (su puerta de enlace es la `.1`).
 - **Los servidores tienen IP fija**, para que el DNS y los demás servicios los encuentren siempre en la misma dirección.
@@ -61,7 +79,7 @@ Un símil: el router es el **portero** del edificio, la DMZ es la **recepción**
 | Clientes (Intranet) | W-N04 | 80 | ✅ | Usar la aplicación web |
 | Clientes (Intranet) | F-N04 | 21 | ✅ | Subir y descargar archivos |
 | Intranet | Servidores | 22 | ✅ | Administración por SSH |
-| Todas | R-N04 | 53, 67 | ✅ | DNS y DHCP |
+| Intranet | R-N04 | 53, 67 | ✅ | DNS y DHCP (dnsmasq solo atiende la Intranet; la DMZ usa IPs fijas) |
 | **W-N04** | **B-N04** | **3306** | ✅ | **La aplicación lee los datos. Único paso abierto de la DMZ a la Intranet** |
 | DMZ | Intranet | Resto | ❌ | Si un servidor de la DMZ es atacado, no puede llegar a la Intranet |
 | Internet | Intranet | Todos | ❌ | La Intranet nunca se expone al exterior |
@@ -96,9 +114,9 @@ Si alguien compromete el FTP e intenta conectarse a la base de datos, el router 
 | Web y FTP en la **DMZ** | Son los servicios que se ofrecen. Si se atacan, el daño queda aislado fuera de la Intranet |
 | Base de datos en la **Intranet** | Contiene la información de la empresa: es lo que más hay que proteger |
 | Un **único paso** DMZ → Intranet (W-N04 → B-N04, puerto 3306) | La web necesita los datos, pero no hace falta abrir nada más |
-| **DHCP y DNS en el router** | El router ya está conectado a todas las redes; un solo equipo da el servicio a todas |
+| **DHCP y DNS en el router** | El router ya está conectado a la Intranet; no hace falta otro servidor. El DHCP solo se da en la Intranet porque los servidores tienen IP fija |
 | Rangos **`10.4.x.x`** | El `4` corresponde al grupo 04: evita choques con otros grupos y se ve de quién es cada red |
-| `.1` para el router, `.10`/`.20` para servidores, `.100`+ para DHCP | Convención fácil de recordar: cada tipo de equipo tiene su tramo |
+| `.1` para el router, `.10`/`.20` para servidores, `.50`–`.150` para DHCP | Convención fácil de recordar: cada tipo de equipo tiene su tramo |
 | **MariaDB** en vez de MySQL | Libre y compatible con MySQL: mismo puerto, mismos comandos y misma conexión desde PHP |
 
 ---
