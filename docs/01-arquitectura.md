@@ -50,8 +50,6 @@ Un símil: el router es el **portero** del edificio, la DMZ es la **recepción**
 - **Los servidores tienen IP fija**, para que el DNS y los demás servicios los encuentren siempre en la misma dirección.
 - **Los clientes usan DHCP**, como en una oficina real: se conectan y reciben IP, puerta de enlace y DNS automáticamente.
 
-<!-- TODO Jordi: confirmar el servicio usado para DHCP y DNS (p. ej. dnsmasq) y el rango DHCP final -->
-
 ---
 
 ## 4. Tráfico permitido entre zonas
