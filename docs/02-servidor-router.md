@@ -36,9 +36,30 @@ Router que connecta Internet, la DMZ i la Intranet. Fa de firewall (iptables), N
 | `enp3s0` | Intranet | `10.4.20.1/24` |
 | `enp4s0` | DMZ | `10.4.10.1/24` |
 
-<!-- TODO Jordi: confirmar les IPs de enp3s0 i enp4s0 i afegir captura del netplan -->
-
 Les IPs `.1` són les portes d'enllaç dels servidors i clients de cada xarxa.
+
+Fitxer `/etc/netplan/01-network-manager-all.yaml`:
+
+```yaml
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    enp1s0:
+      dhcp4: true   # WAN / NAT (Internet)
+    enp2s0:
+      dhcp4: true   # VPN WireGuard Isard
+    enp3s0:
+      dhcp4: false
+      addresses:
+        - 10.4.20.1/24  # Gateway INTRANET
+    enp4s0:
+      dhcp4: false
+      addresses:
+        - 10.4.10.1/24  # Gateway DMZ
+```
+
+![Netplan del router](img/router-netplan.png)
 
 ![Interfícies de xarxa del router](https://github.com/user-attachments/assets/92d9abae-b208-45e5-8ad4-7d793a49597b)
 
@@ -54,9 +75,28 @@ sudo apt install dnsmasq
 
 ![Instal·lació de dnsmasq](https://github.com/user-attachments/assets/54fb1562-d743-4908-9f42-77074cc825fb)
 
-**Configuració de `/etc/dnsmasq.conf`**
+**Configuració a `/etc/dnsmasq.d/intranet.conf`**
 
-<!-- TODO Jordi: copiar aquí el contingut del fitxer com a text -->
+El fitxer principal `/etc/dnsmasq.conf` es deixa amb els valors per defecte (tot comentat). La configuració pròpia va en un fitxer a part dins `/etc/dnsmasq.d/`, que dnsmasq llegeix automàticament:
+
+```
+interface=enp3s0
+dhcp-range=10.4.20.50,10.4.20.150,12h
+dhcp-option=option:router,10.4.20.1
+dhcp-option=option:dns-server,10.4.20.1
+domain=g04.local
+local=/g04.local/
+```
+
+| Línia | Què fa |
+|---|---|
+| `interface=enp3s0` | dnsmasq només atén la Intranet |
+| `dhcp-range` | Reparteix IPs de `.50` a `.150`, durant 12 hores |
+| `option:router` | Porta d'enllaç que reben els clients |
+| `option:dns-server` | DNS que reben els clients (el mateix router) |
+| `domain` / `local` | Domini intern `g04.local`, que només es resol localment |
+
+![Fitxer intranet.conf](img/router-dnsmasq-intranet.png)
 
 ![Configuració de dnsmasq](https://github.com/user-attachments/assets/cd01b477-c775-4c1b-af18-022d23573223)
 
