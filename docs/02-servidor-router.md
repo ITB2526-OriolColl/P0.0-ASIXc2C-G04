@@ -174,7 +174,20 @@ sudo iptables -A FORWARD -i enp3s0 -j ACCEPT
 sudo iptables -A FORWARD -i enp4s0 -s 10.4.10.10 -d 10.4.20.10 -p tcp --dport 3306 -j ACCEPT
 ```
 
-<!-- TODO Jordi: afegir captura de "sudo iptables -L FORWARD -v -n" -->
+**Comprovació de les regles:**
+
+```bash
+sudo iptables -L FORWARD -v -n
+```
+
+![Regles de la cadena FORWARD](img/router-iptables-forward.png)
+
+- `policy DROP`: tot el que no coincideix amb cap regla es bloqueja.
+- `RELATED,ESTABLISHED`: deixa passar les respostes de les connexions ja obertes.
+- `enp3s0`: la Intranet pot sortir a qualsevol lloc.
+- `enp4s0` → `10.4.20.10` port `3306`: l'únic pas obert de la DMZ cap a la Intranet.
+
+Les columnes `pkts` i `bytes` compten els paquets que han coincidit amb cada regla des de l'última vegada que es van carregar.
 
 ---
 
